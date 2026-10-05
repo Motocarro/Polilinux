@@ -10,7 +10,7 @@ An (un)official Ubuntu-based distro for Politecnico di Milano students, built to
 - [x] Target: engineering and CS students; **architecture students are explicitly out of scope**
 - [x] First deliverable: ISO (for bare-metal testing and for testers); prebuilt VM images come later
 - [x] Vivado is **not** part of the base system: it lives in a helper script only
-- [x] Politecnico name/logo licensing is handled by Polinetwork
+- [x] Politecnico name/logo licensing is eventually handled by Polinetwork
 
 ## 1. Things to verify early
 
@@ -35,7 +35,7 @@ An (un)official Ubuntu-based distro for Politecnico di Milano students, built to
 
 - [ ] Compilers and tools: gcc, make, gdb, git
 - [ ] Editors: Kate (GUI default for beginners), Vim as an extra
-- [ ] Flowchart tool (see section 1): candidates are draw.io desktop, PseInt, Dia, yEd. Avoid Wine/Mono
+- [ ] Flowchart tool (see section 1): candidates are draw.io desktop, PseInt, Dia, yEd. Avoid Wine/Mono as it is terribly unreliable
 - [ ] Open-source EDA/engineering tools: GHDL, KiCad, others as courses require
 - [ ] Optional extras: FreeCAD, Blender, LibreCAD/QCAD (documented as NOT for architecture students)
 - [ ] Note-taking app
@@ -86,3 +86,7 @@ An (un)official Ubuntu-based distro for Politecnico di Milano students, built to
 - [ ] Rebase on newer point releases of 26.04 as needed
 - [ ] Add tools for more courses as the list grows
 - [ ] Feedback channel for students (issues, form, or Polinetwork channel)
+
+## Note
+
+This readme file was mostly written by Claude, so will be most of the tools. You are free to report me any problem or give me any suggestion, as i still am the one prompting Claude to do stuff.

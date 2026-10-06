@@ -14,19 +14,19 @@ An (un)official Ubuntu-based distro for Politecnico di Milano students, built to
 
 ## 1. Things to verify early
 
-- [x] Does Kubuntu 26.04 still ship an X11 session? (affects clipboard sharing and auto-resize in VMs) answer: No, it finally uses Wayland!
-- [x] Does Kubuntu publish arm64 desktop ISOs for 26.04, or must I build one? answer: no support for arm64, and [it seems to be quite a problemt to implement](https://discuss.kde.org/t/still-no-iso-for-installing-kubuntu-on-arm64/43130/3#:~:text=Plus-,The,development).
+- [x] Does Kubuntu 26.04 still ship an X11 session? (affects clipboard sharing and auto-resize in VMs) *answer: No, it finally uses Wayland!*
+- [x] Does Kubuntu publish arm64 desktop ISOs for 26.04, or must I build one? *answer: no support for arm64, and [it seems to be quite a problem to implement](https://discuss.kde.org/t/still-no-iso-for-installing-kubuntu-on-arm64/43130/3#:~:text=Plus-,The,development)*.
 - [ ] Which tools do courses actually require? Ask students/professors and build a list beyond gcc, git, Vivado and the flowchart tool
-- [x] Which course uses the flowchart tool, and for what: drawing diagrams or running them? answer: not really an issue
-- [ ] Vivado 2026.2: check AMD release notes for 26.04 support (2026.1 supports 24.04) answer: not yet released
-- [x] Canonical trademark rules: no "Ubuntu" name/logo implying official status; say "based on Ubuntu" answer: who cares
-- [x] Choose a license for the project repo answer: GNUGPG 3.0
+- [x] Which course uses the flowchart tool, and for what: drawing diagrams or running them? *answer: not really an issue*.
+- [x] Vivado 2026.2: check AMD release notes for 26.04 support (2026.1 supports 24.04) *answer: not yet released*.
+- [x] Canonical trademark rules: no "Ubuntu" name/logo implying official status; say "based on Ubuntu" answer: *who cares*.
+- [x] Choose a license for the project repo *answer: GNUGPG 3.0*.
 
 ## 2. Repo and build setup
 
 - [x] Create the GitHub repo
 - [ ] Create the `polilinux-desktop` meta-package (depends on all the tools)
-- [-] Decide where to host packages (own apt repo or PPA) answer: likely an actual repo
+- [x] Decide where to host packages (own apt repo or PPA) answer:*likely an actual repo, WIP*.
 - [ ] First prototype ISO from Kubuntu 26.04 that only adds the meta-package (Cubic or `live-build`)
 - [ ] Keep all customizations inside packages, not in manual ISO edits
 - [ ] Branding: name, wallpaper, theme, boot splash (note the trademark rules above)

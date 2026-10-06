@@ -1,0 +1,10 @@
+Package: polilinux-guest-integration
+Source: polilinux
+Version: 0.1.0ubuntu2
+Architecture: all
+Maintainer: Polinetwork <polinetwork@example.org>
+Installed-Size: 8
+Depends: open-vm-tools-desktop, spice-vdagent, spice-webdavd, qemu-guest-agent, virtualbox-guest-utils, virtualbox-guest-x11
+Section: metapackages
+Priority: optional
+Description: Virtual Machine integration for Polilinux. Guest tools for VMWare (both Fusion and Workstation), Virtualbox, QEMU and UTM. Improve performance and stability.

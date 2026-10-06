@@ -1,0 +1,11 @@
+Package: polilinux-desktop
+Source: polilinux
+Version: 0.1.0ubuntu2
+Architecture: all
+Maintainer: Polinetwork <polinetwork@example.org>
+Installed-Size: 8
+Depends: kubuntu-desktop, polilinux-tools, polilinux-guest-integration
+Recommends: polilinux-extras
+Section: metapackages
+Priority: optional
+Description: Polilinux desktop environment; Meta-package that installs the full Polilinux system for Politecnico di Milano students.

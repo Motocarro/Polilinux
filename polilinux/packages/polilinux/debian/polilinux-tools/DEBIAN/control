@@ -1,0 +1,10 @@
+Package: polilinux-tools
+Source: polilinux
+Version: 0.1.0ubuntu2
+Architecture: all
+Maintainer: Polinetwork <polinetwork@example.org>
+Installed-Size: 8
+Depends: build-essential, gdb, git, kate, vim, ghdl, kicad, gtkwave
+Section: metapackages
+Priority: optional
+Description: Development and engineering tools for Polilinux Compilers, editors and tools used in Politecnico courses.

@@ -1,0 +1,5 @@
+polilinux-desktop_0.1.0ubuntu2_all.deb metapackages optional architecture=all
+polilinux-extras_0.1.0ubuntu2_all.deb metapackages optional architecture=all
+polilinux-guest-integration_0.1.0ubuntu2_all.deb metapackages optional architecture=all
+polilinux-tools_0.1.0ubuntu2_all.deb metapackages optional architecture=all
+polilinux_0.1.0ubuntu2_amd64.buildinfo metapackages optional

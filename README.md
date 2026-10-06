@@ -1,92 +1,134 @@
-# Polilinux: Project Plan
+# Polilinux
 
-An (un)official Ubuntu-based distro for Politecnico di Milano students, built together with Polinetwork. Designed to be a ready-to-go environment for lectures: mainly for VMs (VMware, VirtualBox, UTM), also bare metal / dual boot.
+**An (un)official Ubuntu-based Linux distribution for Politecnico di Milano students.**
 
-## 0. Decisions already made
+[Note: Italian version of this README file coming soon!]
 
-- [x] Base: Ubuntu, Kubuntu flavor (KDE Plasma, familiar to Windows users)
-- [x] Release: Ubuntu 26.04 LTS (supported until 2031)
-- [x] Architecture: "Ubuntu plus a thin layer" (meta-package + ISO), low maintenance, updates via `apt`
-- [x] Target: engineering and CS students; **architecture students are explicitly out of scope**
-- [x] First deliverable: ISO (for bare-metal testing and for testers); prebuilt VM images come later
-- [x] Vivado is **not** part of the base system: it lives in a helper script only
-- [x] Politecnico name/logo licensing is eventually handled by Polinetwork
+Many courses at Politecnico require Linux, but not every student is comfortable with it. Polilinux is a ready-to-use system with the tools needed for lectures already installed and configured, built by a student for students, with the approval of [Polinetwork](https://polinetwork.org).
 
-## 1. Things to verify early
+> ⚠️ **Alpha software.** This is an early test build. Expect rough edges, and don't use it as your only system. Back up your data before installing it on real hardware, especially for dual boot.
 
-- [x] Does Kubuntu 26.04 still ship an X11 session? (affects clipboard sharing and auto-resize in VMs) *answer: No, it finally uses Wayland!*
-- [x] Does Kubuntu publish arm64 desktop ISOs for 26.04, or must I build one? *answer: no support for arm64, and [it seems to be quite a problem to implement](https://discuss.kde.org/t/still-no-iso-for-installing-kubuntu-on-arm64/43130/3#:~:text=Plus-,The,development)*.
-- [ ] Which tools do courses actually require? Ask students/professors and build a list beyond gcc, git, Vivado and the flowchart tool
-- [x] Which course uses the flowchart tool, and for what: drawing diagrams or running them? *answer: not really an issue*.
-- [x] Vivado 2026.2: check AMD release notes for 26.04 support (2026.1 supports 24.04) *answer: not yet released*.
-- [x] Canonical trademark rules: no "Ubuntu" name/logo implying official status; say "based on Ubuntu" answer: *who cares*.
-- [x] Choose a license for the project repo *answer: GNUGPG 3.0*.
+## What is it?
 
-## 2. Repo and build setup
+Polilinux is **Kubuntu 26.04 LTS plus a thin layer**: a set of packages that installs the course tools and (soon) the Polimi-specific configuration on top of a normal Kubuntu system. It is not a from-scratch distribution, and it stays close to Ubuntu on purpose:
 
-- [x] Create the GitHub repo
-- [ ] Create the `polilinux-desktop` meta-package (depends on all the tools)
-- [x] Decide where to host packages (own apt repo or PPA) answer:*likely an actual repo, WIP*.
-- [ ] First prototype ISO from Kubuntu 26.04 that only adds the meta-package (Cubic or `live-build`)
-- [ ] Keep all customizations inside packages, not in manual ISO edits
-- [ ] Branding: name, wallpaper, theme, boot splash (note the trademark rules above)
+- Course instructions are written for Debian/Ubuntu and `apt`, and they work as written.
+- Searching "`<problem>` Ubuntu" finds answers that apply to Polilinux.
+- Updates arrive through Ubuntu's normal update mechanism. Polilinux only adds its own packages on top.
 
-## 3. Package contents (meta-package)
+It uses the KDE Plasma desktop, whose layout (taskbar, start menu) is familiar to Windows users.
 
-- [ ] Compilers and tools: gcc, make, gdb, git
-- [ ] Editors: Kate (GUI default for beginners), Vim as an extra
-- [ ] Flowchart tool (see section 1): candidates are draw.io desktop, PseInt, Dia, yEd. Avoid Wine/Mono as it is terribly unreliable
-- [ ] Open-source EDA/engineering tools: GHDL, KiCad, others as courses require
-- [ ] Optional extras: FreeCAD, Blender, LibreCAD/QCAD (documented as NOT for architecture students)
-- [ ] Note-taking app
-- [ ] Guest integration: `open-vm-tools`, VirtualBox guest utilities, `spice-vdagent`, `qemu-guest-agent`
+## Who is it for?
 
-## 4. Eduroam / NetworkManager (reminder: set up during the build)
+**For:** engineering and computer science students who need a Linux environment for their courses, particularly inside a virtual machine (VMware, VirtualBox, UTM) or as a dual boot.
 
-- [ ] Get the official Politecnico profile from eduroam CAT (cat.eduroam.org), including the CA certificate and server name
-- [ ] Create the NetworkManager connection file without the password (root-owned, permissions `600`, in `/etc/NetworkManager/system-connections/`)
-- [ ] Ship it in the meta-package or a small `polilinux-eduroam` package
-- [ ] Test that it works in the live session and on the installed system, and that the user is asked for credentials on first connection
+**Not for:**
+- **Architecture students.** The workflow of that faculty depends on software that doesn't run on Linux, and we prefer not to promise what we can't deliver. Some basic 2D/3D tools are included only as extras.
+- **Everyday use.** Like Kali Linux, it is meant to get specific work done, not to be a general-purpose system.
+- **People who already use WSL happily.** WSL is a good option too. Polilinux offers a full graphical desktop with everything preconfigured.
 
-## 5. Vivado helper
+## Current state (alpha)
 
-- [ ] Script/small GUI: "Install Vivado" (opens the AMD download page, explains the steps, runs the installer once the file is downloaded)
-- [ ] Detect the CPU architecture and explain clearly on arm64 that Vivado is x86-only
-- [ ] Check the Ubuntu version: warn, don't block, on unsupported releases
-- [ ] Handle the known missing-library workarounds
-- [ ] Update the helper when Vivado 2026.2 is released
-- [ ] (Optional) Installer integration, similar to the "proprietary codecs" checkbox in the Ubuntu/Mint installers (Calamares post-install step)
+### What works
 
-## 6. Testing
+- Live session boots and the system installs on a full installation
+- Meta-packages install correctly and the included programs run
 
-- [ ] Bare-metal test on the debug PC
-- [ ] VM tests: VirtualBox, VMware, UTM
-- [ ] Compare X11 and Wayland sessions in each VM (clipboard, resizing, performance)
-- [ ] Tune KDE defaults for VMs (lighter effects)
-- [ ] Share the ISO with a few helpers/testers and collect feedback
-- [ ] Dual-boot test (including Secure Boot and NVIDIA drivers)
+### What's included
 
-## 7. Apple Silicon / arm64
+| Category | Software |
+|---|---|
+| Development | gcc and the standard build tools (`build-essential`), gdb, git |
+| Editors | Kate (graphical, beginner-friendly), Vim |
+| Digital design | GHDL, GTKWave, KiCad |
+| Virtual machine integration | open-vm-tools (VMware), VirtualBox guest utilities, SPICE/QEMU guest agents (UTM) |
+| Extras (optional) | LibreCAD, Blender, Dia (flowcharts and diagrams), Xournal++ (handwritten notes) |
 
-- [ ] Build an arm64 ISO/image
-- [ ] Test on a Mac and on an iPad with UTM (check JIT availability on iPad)
-- [ ] Experiment with x86 emulation for Vivado (Rosetta or QEMU user-mode) before promising anything
-- [ ] Document honestly what works and what doesn't on Apple Silicon
+### Known limitations
 
-## 8. Automation and release
+- **The installer and the look are still stock Kubuntu.** Branding, wallpaper and installer customization haven't been done yet.
+- **Wayland only.** Kubuntu 26.04 no longer includes an X11 session. Clipboard sharing and automatic window resizing in VMs are still being tested on each hypervisor.
+- **Vivado is not included.** It is proprietary, can't be redistributed, and isn't yet officially supported on Ubuntu 26.04. An install helper is planned for when support arrives.
+- **amd64 only.** There's no native ARM build yet. On Apple Silicon Macs and iPads, UTM can emulate the amd64 image, but it is slow.
+- Wi-Fi for the university network is not preconfigured yet.
 
-- [ ] CI pipeline (e.g. GitHub Actions) that rebuilds the ISO from the meta-package
-- [ ] Prebuilt VM images: `.ova` for VirtualBox/VMware and a UTM bundle
-- [ ] Documentation: install guide for VM, dual boot and UTM
-- [ ] Clear README: who it's for, who it's NOT for, how it differs from WSL
-- [ ] Coordinate the announcement with Polinetwork
+### System Requirements:
 
-## 9. Later / nice to have
+| *Hardware* | **Required** | **Recommended** |
+|---|---|---|
+| CPU | 2/2 Cores/Threads 64bit | 4/4 Cores/Threads 64bit |
+| GPU | *not required* | AMD Radeon or Vega |
+| RAM | 4 GiB (4096 MiB) | 8 GiB (8192 MiB) |
+| Storage| 25 GiB | 64 GiB |
+|Graphics| a display | 1920x1080 |
+| IO (bare metal only) | 1x USB-A 2.0 | 1x USB-A or USB-C 3.0 |
 
-- [ ] Rebase on newer point releases of 26.04 as needed
-- [ ] Add tools for more courses as the list grows
-- [ ] Feedback channel for students (issues, form, or Polinetwork channel)
+### Tested on
+Device: Lenovo Thinkpad T14 Gen 1 20S1 running macOS Sonoma 14.7.1; YMMV
 
-## Note
+| Environment | Live | Install | VM tools | Notes |
+|---|---|---|---|---|
+| _VirtualBox_ | | | | |
+| _VMware_ |Works|Works|Works|*Tested on VMWare Fusion 26H2u1 for macOS*|
+| _UTM (Apple Silicon)_ | | | | |
+| _Bare metal_ | | | | |
 
-This readme file was mostly written by Claude, so will be most of the tools. You are free to report me any problem or give me any suggestion, as i still am the one prompting Claude to do stuff.
+## Download and install
+
+1. Download the latest ISO from the [Releases page](../../releases) (check the MD5 checksum published with it).
+2. **In a virtual machine:** create a VM, attach the ISO, and boot. In VirtualBox, choose the *VMSVGA* graphics controller; in UTM, use a *virtio-gpu* display. Give the VM enough RAM and disk space for a full KDE Plasma desktop.
+3. **On a real computer:** write the ISO to a USB drive and boot from it. Use a dual boot only if you know how to keep your other system safe.
+4. Try the live session first, then run the installer from the desktop.
+
+## Roadmap
+
+### Coming next
+
+- [ ] Branding: name, wallpaper, theme, boot splash
+- [ ] KDE defaults tuned for students and for use inside VMs
+- [ ] **Custom installer**: replace the stock Kubuntu look and flow with a Polilinux one
+- [ ] Polimi Wi-Fi (`polimi-protected`) and wired 802.1X preconfigured with the university's CA certificate (users only enter their own credentials)
+
+### Planned
+
+- [ ] Vivado install helper (waiting for official Ubuntu 26.04 support in Vivado 2026.2)
+- [ ] Google Chrome install helper
+- [ ] Better flowchart tooling (a tool that can also run the flowcharts, not just draw them)
+- [ ] Ready-made VM images (`.ova` for VirtualBox/VMware, UTM bundle)
+- [ ] Automatic ISO builds (CI)
+- [ ] A native arm64 build for Apple Silicon, if feasible
+- [ ] Package repository hosted under Polinetwork
+- [ ] More tools, as courses ask for them (the list of courses is still being collected)
+
+The detailed task list is in [`Checklist.md`](Checklist.md).
+
+## Building from source
+
+Polilinux is defined by Debian packages, built from the `packages/polilinux/` directory. On an Ubuntu system:
+
+```bash
+sudo apt install build-essential devscripts debhelper git lintian
+cd packages/polilinux
+dpkg-buildpackage -us -uc -b
+cd ..
+sudo apt install ./polilinux-*.deb     # make sure old versions aren't left in the folder
+```
+
+The package `polilinux-desktop` pulls in everything else. The experimental ISO was made with [Cubic](https://github.com/PJ-Singh-001/Cubic): start from the Kubuntu 26.04 ISO, install the `.deb` files in the chroot and generate the ISO. A reproducible build pipeline is on the roadmap.
+
+## Feedback and contributing
+
+This project depends on testers. If you try Polilinux, please open an **issue** with:
+
+- where you ran it (hypervisor or hardware, host OS)
+- what you expected and what happened
+- any error messages or screenshots
+
+If your course needs a tool that isn't included, open an issue with the course name and the tool.
+
+## License and trademarks
+
+- Project code and packaging: GNU GPL-3.0
+- Polilinux is based on Ubuntu and Kubuntu. It is **not** an official Canonical, Ubuntu, Kubuntu or KDE product and is not endorsed by them. "Ubuntu" and "Kubuntu" are trademarks of Canonical Ltd.
+- Included software is distributed under its own licenses. Proprietary software (such as Vivado) is not redistributed.
+- Use of the Politecnico di Milano name and logo is coordinated with Polinetwork.

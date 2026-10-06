@@ -1,0 +1,27 @@
+Source: polilinux
+Section: metapackages
+Priority: optional
+Maintainer: Polinetwork <polinetwork@example.org>
+Build-Depends: debhelper-compat (=13)
+Standards-Version: 4.7.0
+
+Package: polilinux-desktop
+Architecture: all
+Depends: ${misc:Depends}, kubuntu-desktop, polilinux-tools, polilinux-guest-integration
+Recommends: polilinux-extras
+Description: Polilinux desktop environment; Meta-package that installs the full Polilinux system for Politecnico di Milano students.
+
+Package: polilinux-tools
+Architecture: all
+Depends: ${misc:Depends}, build-essential, gdb, git, kate, vim, ghdl, kicad, gtkwave
+Description: Development and engineering tools for Polilinux Compilers, editors and tools used in Politecnico courses.
+
+Package: polilinux-guest-integration
+Architecture: all
+Depends: ${misc:Depends}, open-vm-tools-desktop, spice-vdagent, spice-webdavd, qemu-guest-agent, virtualbox-guest-utils, virtualbox-guest-x11
+Description: Virtual Machine integration for Polilinux. Guest tools for VMWare (both Fusion and Workstation), Virtualbox, QEMU and UTM. Improve performance and stability.
+
+Package: polilinux-extras
+Architecture: all
+Depends: ${misc:Depends}, librecad, blender, dia, xournalpp
+Description: Extra tools for architecture and note taking. Not intended for professional use, (unfortunately) there's Windows for that.

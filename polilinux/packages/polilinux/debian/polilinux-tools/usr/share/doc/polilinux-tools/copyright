@@ -1,0 +1,6 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: polilinux
+
+Files: *
+Copyright: 2026 Polinetwork
+License: GPL-3+

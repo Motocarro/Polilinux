@@ -1,0 +1,10 @@
+Package: polilinux-extras
+Source: polilinux
+Version: 0.1.0ubuntu2
+Architecture: all
+Maintainer: Polinetwork <polinetwork@example.org>
+Installed-Size: 8
+Depends: librecad, blender, dia, xournalpp
+Section: metapackages
+Priority: optional
+Description: Extra tools for architecture and note taking. Not intended for professional use, (unfortunately) there's Windows for that.

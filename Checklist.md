@@ -25,21 +25,21 @@ An (un)official Ubuntu-based distro for Politecnico di Milano students, built to
 ## 2. Repo and build setup
 
 - [x] Create the GitHub repo
-- [ ] Create the `polilinux-desktop` meta-package (depends on all the tools)
+- [x] Create the `polilinux-desktop` meta-package (depends on all the tools)
 - [x] Decide where to host packages (own apt repo or PPA) answer:*likely an actual repo, WIP*.
-- [ ] First prototype ISO from Kubuntu 26.04 that only adds the meta-package (Cubic or `live-build`)
+- [x] First prototype ISO from Kubuntu 26.04 that only adds the meta-package (Cubic or `live-build`)
 - [ ] Keep all customizations inside packages, not in manual ISO edits
 - [ ] Branding: name, wallpaper, theme, boot splash (note the trademark rules above)
 
 ## 3. Package contents (meta-package)
 
-- [ ] Compilers and tools: gcc, make, gdb, git
-- [ ] Editors: Kate (GUI default for beginners), Vim as an extra
+- [x] Compilers and tools: gcc, make, gdb, git
+- [x] Editors: Kate (GUI default for beginners), Vim as an extra
 - [ ] Flowchart tool (see section 1): candidates are draw.io desktop, PseInt, Dia, yEd. Avoid Wine/Mono as it is terribly unreliable
-- [ ] Open-source EDA/engineering tools: GHDL, KiCad, others as courses require
-- [ ] Optional extras: FreeCAD, Blender, LibreCAD/QCAD (documented as NOT for architecture students)
-- [ ] Note-taking app
-- [ ] Guest integration: `open-vm-tools`, VirtualBox guest utilities, `spice-vdagent`, `qemu-guest-agent`
+- [x] Open-source EDA/engineering tools: GHDL, KiCad, others as courses require
+- [x] Optional extras: FreeCAD, Blender, LibreCAD/QCAD (documented as NOT for architecture students)
+- [x] Note-taking app (settled on Xournal)
+- [x] Guest integration: `open-vm-tools`, VirtualBox guest utilities, `spice-vdagent`, `qemu-guest-agent`
 
 ## 4. Eduroam / NetworkManager (reminder: set up during the build)
 
@@ -60,8 +60,8 @@ An (un)official Ubuntu-based distro for Politecnico di Milano students, built to
 ## 6. Testing
 
 - [ ] Bare-metal test on the debug PC
-- [ ] VM tests: VirtualBox, VMware, UTM
-- [ ] Compare X11 and Wayland sessions in each VM (clipboard, resizing, performance)
+- [x] VM tests: VirtualBox, VMware, UTM
+- [x] Compare X11 and Wayland sessions in each VM (clipboard, resizing, performance) *X11 is not supported anymore*.
 - [ ] Tune KDE defaults for VMs (lighter effects)
 - [ ] Share the ISO with a few helpers/testers and collect feedback
 - [ ] Dual-boot test (including Secure Boot and NVIDIA drivers)
@@ -78,7 +78,7 @@ An (un)official Ubuntu-based distro for Politecnico di Milano students, built to
 - [ ] CI pipeline (e.g. GitHub Actions) that rebuilds the ISO from the meta-package
 - [ ] Prebuilt VM images: `.ova` for VirtualBox/VMware and a UTM bundle
 - [ ] Documentation: install guide for VM, dual boot and UTM
-- [ ] Clear README: who it's for, who it's NOT for, how it differs from WSL
+- [x] Clear README: who it's for, who it's NOT for, how it differs from WSL
 - [ ] Coordinate the announcement with Polinetwork
 
 ## 9. Later / nice to have
@@ -89,4 +89,4 @@ An (un)official Ubuntu-based distro for Politecnico di Milano students, built to
 
 ## Note
 
-This readme file was mostly written by Claude, so will be most of the tools. You are free to report me any problem or give me any suggestion, as i still am the one prompting Claude to do stuff.
+This readme file was mostly written by Claude, so will be most of the tools. You are free to report to me any problem, or give me any suggestion, as i still am the one prompting Claude to do stuff.

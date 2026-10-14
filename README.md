@@ -1,10 +1,10 @@
 # Polilinux
 
+> Note: as of October 14, 2026, this project is now discontinued; this means it will NOT be updated anymore. It was a short but meaningful experience! Meta-packages are still visible and usable by anyone, just won't be maintained in future.
+
 **An (un)official Ubuntu-based Linux distribution for Politecnico di Milano students.**
 
-[Note: Italian version of this README file coming soon!]
-
-Many courses at Politecnico require Linux, but not every student is comfortable with it. Polilinux is a ready-to-use system with the tools needed for lectures already installed and configured, built by a student for students, with the approval of [Polinetwork](https://polinetwork.org).
+Many courses at Politecnico require Linux, but not every student is comfortable with it. Polilinux is a ready-to-use system with the tools needed for lectures already installed and configured, built by a student for students.
 
 > ⚠️ **Alpha software.** This is an early test build. Expect rough edges, and don't use it as your only system. Back up your data before installing it on real hardware, especially for dual boot.
 
@@ -27,7 +27,7 @@ It uses the KDE Plasma desktop, whose layout (taskbar, start menu) is familiar t
 - **Everyday use.** Like Kali Linux, it is meant to get specific work done, not to be a general-purpose system.
 - **People who already use WSL happily.** WSL is a good option too. Polilinux offers a full graphical desktop with everything preconfigured.
 
-## Current state (alpha)
+## Current state (alpha, DISCONTINUED)
 
 ### What works
 
@@ -75,14 +75,14 @@ Device: Lenovo Thinkpad T14 Gen 1 20S1 running macOS Sonoma 14.7.1; YMMV
 
 ## Download and install
 
-1. Download the latest ISO from the [Releases page](../../releases) (check the MD5 checksum published with it).
+1. Download the latest ISO from the [Releases page](../../releases) (check the MD5 checksum published with it). (*Note: not available for download anymore.*)
 2. **In a virtual machine:** create a VM, attach the ISO, and boot. In VirtualBox, choose the *VMSVGA* graphics controller; in UTM, use a *virtio-gpu* display. Give the VM enough RAM and disk space for a full KDE Plasma desktop.
 3. **On a real computer:** write the ISO to a USB drive and boot from it. Use a dual boot only if you know how to keep your other system safe.
 4. Try the live session first, then run the installer from the desktop.
 
 ## Roadmap
 
-### Coming next
+### Coming next (What was supposed to come next)
 
 - [ ] Branding: name, wallpaper, theme, boot splash
 - [ ] KDE defaults tuned for students and for use inside VMs
@@ -131,4 +131,5 @@ If your course needs a tool that isn't included, open an issue with the course n
 - Project code and packaging: GNU GPL-3.0
 - Polilinux is based on Ubuntu and Kubuntu. It is **not** an official Canonical, Ubuntu, Kubuntu or KDE product and is not endorsed by them. "Ubuntu" and "Kubuntu" are trademarks of Canonical Ltd.
 - Included software is distributed under its own licenses. Proprietary software (such as Vivado) is not redistributed.
-- Use of the Politecnico di Milano name and logo is coordinated with Polinetwork.
+
+[THE END]

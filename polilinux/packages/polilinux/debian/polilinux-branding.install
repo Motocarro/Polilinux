@@ -1,0 +1,6 @@
+branding/usr/share/polilinux/logo.txt usr/share/polilinux/
+branding/usr/lib/os-release usr/lib/
+branding/etc/lsb-release etc/
+branding/etc/issue etc/
+branding/etc/issue.net etc/
+branding/etc/skel/.config/neofetch/config.conf etc/skel/.config/neofetch/

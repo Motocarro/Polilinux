@@ -1,0 +1,11 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = remove ] || [ "$1" = abort-install ] || [ "$1" = disappear ]; then
+    for f in /usr/lib/os-release /etc/lsb-release /etc/issue /etc/issue.net; do
+        dpkg-divert --package polilinux-branding --quiet --remove --rename "$f"
+    done
+fi
+
+#DEBHELPER#
+exit 0

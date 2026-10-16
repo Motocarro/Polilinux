@@ -1,0 +1,12 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = install ] || [ "$1" = upgrade ]; then
+    for f in /usr/lib/os-release /etc/lsb-release /etc/issue /etc/issue.net; do
+        dpkg-divert --package polilinux-branding --quiet --add --rename \
+            --divert "$f.distrib" "$f"
+    done
+fi
+
+#DEBHELPER#
+exit 0

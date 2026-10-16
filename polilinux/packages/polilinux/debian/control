@@ -13,7 +13,7 @@ Description: Polilinux desktop environment; Meta-package that installs the full 
 
 Package: polilinux-tools
 Architecture: all
-Depends: ${misc:Depends}, build-essential, gdb, git, kate, vim, ghdl, kicad, gtkwave
+Depends: ${misc:Depends}, build-essential, gdb, git, kate, vim, ghdl, kicad, gtkwave, sl, fastfetch, neofetch, htop
 Description: Development and engineering tools for Polilinux Compilers, editors and tools used in Politecnico courses.
 
 Package: polilinux-guest-integration
@@ -25,3 +25,9 @@ Package: polilinux-extras
 Architecture: all
 Depends: ${misc:Depends}, librecad, blender, dia, xournalpp
 Description: Extra tools for architecture and note taking. Not intended for professional use, (unfortunately) there's Windows for that.
+
+Package: polilinux-branding
+Architecture: all
+Depends: ${misc:Depends}
+Description: Polilinux identity and branding
+ System identity (os-release, lsb-release, issue) and neofetch logo.

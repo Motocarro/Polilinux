@@ -1,0 +1,13 @@
+# Polilinux identity. Keep VERSION_CODENAME and UBUNTU_CODENAME identical to the
+# values in the stock Linux Mint os-release you are building on.
+PRETTY_NAME="Polilinux 0.2"
+NAME="Polilinux"
+VERSION_ID="0.2"
+VERSION="0.2"
+VERSION_CODENAME=TODO_COPY_FROM_MINT
+ID=polilinux
+ID_LIKE="linuxmint ubuntu debian"
+HOME_URL="https://github.com/TODO/polilinux"
+SUPPORT_URL="https://github.com/TODO/polilinux/issues"
+BUG_REPORT_URL="https://github.com/TODO/polilinux/issues"
+UBUNTU_CODENAME=TODO_COPY_FROM_MINT

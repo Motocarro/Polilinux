@@ -1,6 +1,5 @@
 # Polilinux
 
-> Note: as of October 14, 2026, this project is now discontinued; this means it will NOT be updated anymore. It was a short but meaningful experience! Meta-packages are still visible and usable by anyone, just won't be maintained in future.
 
 **An (un)official Ubuntu-based Linux distribution for Politecnico di Milano students.**
 
@@ -27,7 +26,7 @@ It uses the KDE Plasma desktop, whose layout (taskbar, start menu) is familiar t
 - **Everyday use.** Like Kali Linux, it is meant to get specific work done, not to be a general-purpose system.
 - **People who already use WSL happily.** WSL is a good option too. Polilinux offers a full graphical desktop with everything preconfigured.
 
-## Current state (alpha, DISCONTINUED)
+## Current state (alpha)
 
 ### What works
 
@@ -75,7 +74,7 @@ Device: Lenovo Thinkpad T14 Gen 1 20S1 running macOS Sonoma 14.7.1; YMMV
 
 ## Download and install
 
-1. Download the latest ISO from the [Releases page](../../releases) (check the MD5 checksum published with it). (*Note: not available for download anymore.*)
+1. Download the latest ISO from the [Releases page](../../releases) (check the MD5 checksum published with it). (*Note: because the file is too large, it can't be added to the Releases page. This will eventually be fixed*)
 2. **In a virtual machine:** create a VM, attach the ISO, and boot. In VirtualBox, choose the *VMSVGA* graphics controller; in UTM, use a *virtio-gpu* display. Give the VM enough RAM and disk space for a full KDE Plasma desktop.
 3. **On a real computer:** write the ISO to a USB drive and boot from it. Use a dual boot only if you know how to keep your other system safe.
 4. Try the live session first, then run the installer from the desktop.
@@ -97,7 +96,7 @@ Device: Lenovo Thinkpad T14 Gen 1 20S1 running macOS Sonoma 14.7.1; YMMV
 - [ ] Ready-made VM images (`.ova` for VirtualBox/VMware, UTM bundle)
 - [ ] Automatic ISO builds (CI)
 - [ ] A native arm64 build for Apple Silicon, if feasible
-- [ ] Package repository hosted under Polinetwork
+- [ ] Package repository
 - [ ] More tools, as courses ask for them (the list of courses is still being collected)
 
 The detailed task list is in [`Checklist.md`](Checklist.md).

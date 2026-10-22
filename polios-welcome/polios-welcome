@@ -1,0 +1,334 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+"""PoliOS Welcome: first-run wizard (Polimi Wi-Fi, then course software).
+
+  polios-welcome               run the wizard
+  polios-welcome --first-run   what autostart uses: once per user, never in the live session
+  polios-welcome --force-wifi  show the Wi-Fi page even without a Wi-Fi adapter (testing)
+  polios-welcome --dry-run     simulate the software installation (nothing is installed)
+"""
+import os
+import subprocess
+import sys
+import uuid
+
+sys.dont_write_bytecode = True
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+import polios_common as common  # noqa: E402
+from PyQt5 import QtCore, QtWidgets  # noqa: E402
+
+CA_FILE = os.path.join(common.INSTALL_DIR, "ca", "cachain_geant_harica.pem")
+HELPER = os.path.join(common.INSTALL_DIR, "polios-welcome-helper")
+STATE_DIR = os.path.join(
+    os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config")), "polios")
+DONE_FLAG = os.path.join(STATE_DIR, "welcome-done")
+DRY_RUN = "--dry-run" in sys.argv
+
+# Values from the Polimi ICT guide (TTLS, Linux).
+SSID = "polimi-protected"
+WIRED_ID = "polimi-wired"
+DOMAIN = "wifi.polimi.it"
+ANON_IDENTITY = "anonymous@polimi.it"
+NM = "org.freedesktop.NetworkManager"
+
+
+# ---------------------------------------------------------------- system ---
+
+def in_live_session():
+    try:
+        with open("/proc/cmdline") as handle:
+            return "boot=casper" in handle.read()
+    except OSError:
+        return False
+
+
+def has_wifi_device():
+    try:
+        out = subprocess.run(["nmcli", "-t", "-f", "TYPE", "device"],
+                             capture_output=True, text=True, timeout=5).stdout
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return "wifi" in out.split()
+
+
+def has_internet():
+    try:
+        return subprocess.call(["nm-online", "-q", "-t", "2"]) == 0
+    except OSError:
+        return False
+
+
+def mark_done():
+    os.makedirs(STATE_DIR, exist_ok=True)
+    open(DONE_FLAG, "a").close()
+
+
+# ------------------------------------------------------- NetworkManager ---
+
+def _sv(values):
+    import dbus
+    return dbus.Dictionary(values, signature="sv")
+
+
+def _eap_settings(username, password):
+    import dbus
+    return _sv({
+        "eap": dbus.Array(["ttls"], signature="s"),
+        "identity": username,
+        "anonymous-identity": ANON_IDENTITY,
+        "domain-suffix-match": DOMAIN,
+        "ca-cert": dbus.ByteArray(("file://%s\0" % CA_FILE).encode("utf-8")),
+        "phase2-auth": "pap",
+        "password": password,
+        "password-flags": dbus.UInt32(0),
+    })
+
+
+def _delete_by_id(bus, settings, conn_id):
+    import dbus
+    for path in settings.ListConnections():
+        conn = dbus.Interface(bus.get_object(NM, path), NM + ".Settings.Connection")
+        try:
+            if conn.GetSettings()["connection"]["id"] == conn_id:
+                conn.Delete()
+        except dbus.exceptions.DBusException:
+            pass
+
+
+def save_connections(username, password, wired=False):
+    """Create (or replace) the NetworkManager profiles. The password travels over
+    D-Bus, never on a command line."""
+    import dbus
+    if not os.path.isfile(CA_FILE):
+        raise RuntimeError("the Polimi CA certificate is missing (see README, step 'CA')")
+    bus = dbus.SystemBus()
+    settings = dbus.Interface(
+        bus.get_object(NM, "/org/freedesktop/NetworkManager/Settings"), NM + ".Settings")
+    profiles = [{
+        "connection": _sv({"id": SSID, "type": "802-11-wireless",
+                           "uuid": str(uuid.uuid4()), "autoconnect": True}),
+        "802-11-wireless": _sv({"ssid": dbus.ByteArray(SSID.encode("utf-8")),
+                                "mode": "infrastructure"}),
+        "802-11-wireless-security": _sv({"key-mgmt": "wpa-eap"}),
+        "802-1x": _eap_settings(username, password),
+        "ipv4": _sv({"method": "auto"}),
+        "ipv6": _sv({"method": "auto"}),
+    }]
+    if wired:
+        profiles.append({
+            "connection": _sv({"id": WIRED_ID, "type": "802-3-ethernet",
+                               "uuid": str(uuid.uuid4()), "autoconnect": True}),
+            "802-3-ethernet": _sv({}),
+            "802-1x": _eap_settings(username, password),
+            "ipv4": _sv({"method": "auto"}),
+            "ipv6": _sv({"method": "auto"}),
+        })
+    for profile in profiles:
+        _delete_by_id(bus, settings, profile["connection"]["id"])
+        settings.AddConnection(dbus.Dictionary(profile, signature="sa{sv}"))
+
+
+# ------------------------------------------------------------------- UI ---
+
+PAGE_WIFI, PAGE_COURSES, PAGE_INSTALL, PAGE_DONE = range(4)
+
+
+class WifiPage(QtWidgets.QWizardPage):
+    def __init__(self):
+        super().__init__()
+        self.setTitle("Polimi Wi-Fi")
+        self.setSubTitle("Connect to the polimi-protected network with your Polimi "
+                         "credentials. Your password is stored by the system's "
+                         "network manager, not by PoliOS.")
+        self.user = QtWidgets.QLineEdit()
+        self.user.setPlaceholderText("Codice persona, e.g. 10123456")
+        self.password = QtWidgets.QLineEdit()
+        self.password.setEchoMode(QtWidgets.QLineEdit.Password)
+        self.wired = QtWidgets.QCheckBox("Also set up campus Ethernet (802.1X). "
+                                         "Only needed on campus wired ports.")
+        self.skip = QtWidgets.QCheckBox("Skip, I'll set up Wi-Fi later")
+        self.message = QtWidgets.QLabel()
+        self.message.setWordWrap(True)
+        self.message.setStyleSheet("color: #c0392b;")
+        form = QtWidgets.QFormLayout()
+        form.addRow("Username", self.user)
+        form.addRow("Password", self.password)
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.addLayout(form)
+        layout.addWidget(self.wired)
+        layout.addWidget(self.skip)
+        layout.addWidget(self.message)
+        layout.addStretch(1)
+        self.skip.toggled.connect(self._toggle)
+
+    def _toggle(self, skipped):
+        for widget in (self.user, self.password, self.wired):
+            widget.setEnabled(not skipped)
+
+    def initializePage(self):
+        if not os.path.isfile(CA_FILE):
+            self.message.setText("Wi-Fi setup is unavailable: the Polimi certificate "
+                                 "is missing from this system.")
+            self.skip.setChecked(True)
+
+    def validatePage(self):
+        if self.skip.isChecked():
+            return True
+        try:
+            username = common.normalize_username(self.user.text())
+        except ValueError as exc:
+            self.message.setText(str(exc))
+            return False
+        if not self.password.text():
+            self.message.setText("Enter your password.")
+            return False
+        try:
+            save_connections(username, self.password.text(), self.wired.isChecked())
+        except Exception as exc:  # D-Bus, polkit, missing NetworkManager...
+            self.message.setText("Could not save the connection: %s" % exc)
+            return False
+        self.password.clear()
+        return True
+
+
+class CoursesPage(QtWidgets.QWizardPage):
+    def __init__(self):
+        super().__init__()
+        self.setTitle("Your courses")
+        self.setSubTitle("Select the courses you follow. Their software will be "
+                         "downloaded and installed.")
+        self.setCommitPage(True)
+        self.setButtonText(QtWidgets.QWizard.CommitButton, "Install")
+        self.info = QtWidgets.QLabel()
+        self.info.setWordWrap(True)
+        self.list = QtWidgets.QListWidget()
+        courses, problems = common.load_courses()
+        for course in courses:
+            item = QtWidgets.QListWidgetItem(
+                course.title + (" \u2013 " + course.description if course.description else ""))
+            item.setFlags(item.flags() | QtCore.Qt.ItemIsUserCheckable)
+            item.setCheckState(QtCore.Qt.Unchecked)
+            item.setData(QtCore.Qt.UserRole, course.id)
+            self.list.addItem(item)
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.addWidget(self.info)
+        layout.addWidget(self.list)
+        if problems:
+            self.info.setText("Problem in courses.conf: " + "; ".join(problems))
+        elif not courses:
+            self.info.setText("No courses are available yet.")
+
+    def initializePage(self):
+        if self.list.count() and not has_internet():
+            self.info.setText("No internet connection detected. The software is "
+                              "downloaded from the internet: connect first, or run "
+                              "PoliOS Welcome again later from the menu.")
+
+    def selected(self):
+        return [self.list.item(i).data(QtCore.Qt.UserRole)
+                for i in range(self.list.count())
+                if self.list.item(i).checkState() == QtCore.Qt.Checked]
+
+
+class InstallPage(QtWidgets.QWizardPage):
+    def __init__(self):
+        super().__init__()
+        self.setTitle("Installing")
+        self._done = False
+        self.proc = None
+        self.status = QtWidgets.QLabel()
+        self.status.setWordWrap(True)
+        self.bar = QtWidgets.QProgressBar()
+        self.log = QtWidgets.QPlainTextEdit()
+        self.log.setReadOnly(True)
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.addWidget(self.status)
+        layout.addWidget(self.bar)
+        layout.addWidget(self.log)
+
+    def isComplete(self):
+        return self._done
+
+    def _finish(self, text):
+        self.bar.setRange(0, 1)
+        self.bar.setValue(1)
+        self.status.setText(text)
+        self._done = True
+        self.completeChanged.emit()
+
+    def initializePage(self):
+        self._done = False
+        self.log.clear()
+        courses = self.wizard().page(PAGE_COURSES).selected()
+        if not courses:
+            self._finish("No course selected. Nothing to install.")
+            return
+        self.bar.setRange(0, 0)
+        self.status.setText(("(dry run) " if DRY_RUN else "") +
+                            "Installing, this can take a few minutes. "
+                            "You may be asked for your password.")
+        self.proc = QtCore.QProcess(self)
+        self.proc.setProcessChannelMode(QtCore.QProcess.MergedChannels)
+        self.proc.readyRead.connect(self._read)
+        self.proc.finished.connect(self._finished)
+        self.proc.errorOccurred.connect(self._error)
+        self.proc.start("pkexec", [HELPER] + (["--dry-run"] if DRY_RUN else []) + courses)
+
+    def _read(self):
+        self.log.appendPlainText(bytes(self.proc.readAll()).decode("utf-8", "replace").rstrip())
+
+    def _finished(self, code, _status):
+        if code == 0:
+            self._finish("Done." if not DRY_RUN else "Dry run finished: nothing was installed.")
+        elif code == 3:
+            self._finish("PoliOS Welcome is not installed correctly: its files must be owned "
+                         "by root. Run install.sh again.")
+        elif code in (126, 127):
+            self._finish("The installation was cancelled (authentication was not completed).")
+        else:
+            self._finish("The installation did not complete (code %d). Check your internet "
+                         "connection and try again from the PoliOS Welcome menu entry." % code)
+
+    def _error(self, _err):
+        if not self._done:
+            self._finish("Could not start the installer (is pkexec installed?).")
+
+
+class DonePage(QtWidgets.QWizardPage):
+    def __init__(self):
+        super().__init__()
+        self.setTitle("All set")
+        self.setFinalPage(True)
+        label = QtWidgets.QLabel("You can run PoliOS Welcome again at any time from the "
+                                 "application menu, for example to add more courses or "
+                                 "update your Wi-Fi password (Polimi passwords expire "
+                                 "periodically).")
+        label.setWordWrap(True)
+        QtWidgets.QVBoxLayout(self).addWidget(label)
+
+
+class Wizard(QtWidgets.QWizard):
+    def __init__(self, wifi_available):
+        super().__init__()
+        self.setWindowTitle("Welcome to PoliOS")
+        self.setWizardStyle(QtWidgets.QWizard.ModernStyle)
+        self.setPage(PAGE_WIFI, WifiPage())
+        self.setPage(PAGE_COURSES, CoursesPage())
+        self.setPage(PAGE_INSTALL, InstallPage())
+        self.setPage(PAGE_DONE, DonePage())
+        self.setStartId(PAGE_WIFI if wifi_available else PAGE_COURSES)
+        self.resize(640, 480)
+
+
+def main(argv):
+    if "--first-run" in argv and (os.path.exists(DONE_FLAG) or in_live_session()):
+        return 0
+    app = QtWidgets.QApplication([argv[0]])
+    wizard = Wizard("--force-wifi" in argv or has_wifi_device())
+    wizard.exec_()
+    mark_done()
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

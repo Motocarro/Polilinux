@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=PoliOS Welcome
+Comment=Choose the software for your courses
+Exec=polios-welcome
+Icon=system-software-install
+Categories=System;Settings;

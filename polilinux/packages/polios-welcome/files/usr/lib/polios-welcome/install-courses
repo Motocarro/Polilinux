@@ -1,0 +1,67 @@
+#!/usr/bin/python3
+"""Root helper, run through pkexec: install the software of the given courses.
+
+It takes course IDs only and looks the packages up itself in the manifests under
+/usr/share, which only root can change. So it can never be used to install
+arbitrary packages.
+"""
+import argparse
+import os
+import subprocess
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import courses as manifests  # noqa: E402
+
+
+def run(cmd, env):
+    print("==> " + " ".join(cmd), flush=True)
+    return subprocess.run(cmd, env=env).returncode
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("ids", nargs="*")
+    ap.add_argument("--dry-run", action="store_true", help="print the commands only")
+    ap.add_argument("--courses-dir", help="only allowed together with --dry-run (for tests)")
+    args = ap.parse_args()
+
+    if args.courses_dir and not args.dry_run:
+        print("--courses-dir requires --dry-run", file=sys.stderr)
+        return 2
+    available = manifests.load_courses(args.courses_dir or manifests.COURSES_DIR)
+
+    unknown = [i for i in args.ids if i not in available]
+    if unknown:
+        print("Unknown course(s): " + ", ".join(unknown), file=sys.stderr)
+        return 2
+
+    apt, flat = [], []
+    for i in args.ids:
+        apt += [p for p in available[i]["apt"] if p not in apt]
+        flat += [f for f in available[i]["flatpak"] if f not in flat]
+
+    steps = []
+    if apt:
+        steps.append(["apt-get", "update"])
+        steps.append(["apt-get", "install", "-y", *apt])
+    if flat:
+        steps.append(["flatpak", "install", "-y", "--noninteractive", "flathub", *flat])
+
+    if args.dry_run:
+        for s in steps:
+            print(" ".join(s))
+        return 0
+
+    env = dict(os.environ, DEBIAN_FRONTEND="noninteractive")
+    for s in steps:
+        rc = run(s, env)
+        if rc != 0:
+            print(f"Step failed with exit code {rc}", file=sys.stderr)
+            return rc
+    print("==> All done.", flush=True)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

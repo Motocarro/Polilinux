@@ -1,0 +1,6 @@
+# Example course (delete or replace once real courses are added).
+id = "example-programming"
+name = "Example: Programming basics"
+description = "C compiler, debugger and git"
+apt = ["build-essential", "gdb", "git"]
+flatpak = []

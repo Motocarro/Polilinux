@@ -1,0 +1,13 @@
+Source: polios-welcome
+Section: utils
+Priority: optional
+Maintainer: PoliOS Team <polios@example.org>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.2
+
+Package: polios-welcome
+Architecture: all
+Depends: ${misc:Depends}, python3, python3-pyqt5, pkexec, network-manager
+Description: PoliOS first-run welcome wizard
+ Lets students choose the course tool packages to install after the
+ first login. Works regardless of the installer used.

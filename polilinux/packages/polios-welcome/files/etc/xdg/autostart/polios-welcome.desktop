@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Name=PoliOS Welcome
+Exec=polios-welcome --first-run
+X-KDE-autostart-after=panel

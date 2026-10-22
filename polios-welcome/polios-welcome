@@ -139,7 +139,7 @@ class WifiPage(QtWidgets.QWizardPage):
         self.setTitle("Polimi Wi-Fi")
         self.setSubTitle("Connect to the polimi-protected network with your Polimi "
                          "credentials. Your password is stored by the system's "
-                         "network manager, not by PoliOS.")
+                         "network manager, so no one can see your credentials, not even PoliOS.")
         self.user = QtWidgets.QLineEdit()
         self.user.setPlaceholderText("Codice persona, e.g. 10123456")
         self.password = QtWidgets.QLineEdit()
@@ -301,8 +301,7 @@ class DonePage(QtWidgets.QWizardPage):
         self.setFinalPage(True)
         label = QtWidgets.QLabel("You can run PoliOS Welcome again at any time from the "
                                  "application menu, for example to add more courses or "
-                                 "update your Wi-Fi password (Polimi passwords expire "
-                                 "periodically).")
+                                 "update your Wi-Fi password.")
         label.setWordWrap(True)
         QtWidgets.QVBoxLayout(self).addWidget(label)
 
@@ -310,7 +309,7 @@ class DonePage(QtWidgets.QWizardPage):
 class Wizard(QtWidgets.QWizard):
     def __init__(self, wifi_available):
         super().__init__()
-        self.setWindowTitle("Welcome to PoliOS")
+        self.setWindowTitle("Benvenuti su PoliOS!")
         self.setWizardStyle(QtWidgets.QWizard.ModernStyle)
         self.setPage(PAGE_WIFI, WifiPage())
         self.setPage(PAGE_COURSES, CoursesPage())

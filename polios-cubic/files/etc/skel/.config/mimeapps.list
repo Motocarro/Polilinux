@@ -1,0 +1,12 @@
+[Default Applications]
+inode/directory=org.kde.dolphin.desktop
+image/jpeg=org.gnome.eog.desktop
+image/png=org.gnome.eog.desktop
+video/mp4=org.gnome.Totem.desktop
+video/x-matroska=org.gnome.Totem.desktop
+application/pdf=okularApplication_pdf.desktop
+application/zip=org.kde.ark.desktop
+application/x-tar=org.kde.ark.desktop
+application/x-compressed-tar=org.kde.ark.desktop
+application/x-7z-compressed=org.kde.ark.desktop
+text/plain=org.gnome.gedit.desktop

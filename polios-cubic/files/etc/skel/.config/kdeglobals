@@ -1,0 +1,16 @@
+[General]
+ColorScheme=BreezeDark
+
+[KDE]
+LookAndFeelPackage=org.polios.desktop
+
+[Colors:Window]
+BackgroundNormal=30,35,45
+ForegroundNormal=239,240,241
+
+[Colors:Selection]
+BackgroundNormal=61,174,233
+ForegroundNormal=255,255,255
+
+[Icons]
+Theme=WhiteSur

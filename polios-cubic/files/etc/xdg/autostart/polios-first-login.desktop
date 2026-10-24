@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=PoliOS first login
+Exec=/usr/local/bin/polios-first-login
+OnlyShowIn=KDE;
+NoDisplay=true

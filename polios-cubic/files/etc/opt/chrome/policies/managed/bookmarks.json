@@ -1,0 +1,16 @@
+{
+  "BookmarkBarEnabled": true,
+  "ManagedBookmarks": [
+    { "name": "PoliNetwork", "url": "https://polinetwork.org" },
+    {
+      "name": "Link Utili",
+      "children": [
+        { "name": "Aule Libere", "url": "https://aule.polinetwork.org" },
+        { "name": "Ricerca Gruppi", "url": "https://polinet.cc/groups" },
+        { "name": "Servizi Online PoliMi", "url": "https://www.polimi.it/servizi-online" },
+        { "name": "Connessione Wi-Fi", "url": "https://www.ict.polimi.it/wifi/" },
+        { "name": "WeBeep", "url": "https://webeep.polimi.it" }
+      ]
+    }
+  ]
+}

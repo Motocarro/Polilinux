@@ -1,0 +1,15 @@
+#!/bin/sh
+# Once per user: make sure the PoliOS wallpaper is applied (fallback for the layout script).
+FLAG="${XDG_CONFIG_HOME:-$HOME/.config}/polios/wallpaper-applied"
+IMG=/usr/share/polios-assets/background.png
+[ -f "$FLAG" ] && exit 0
+[ -f "$IMG" ] && command -v plasma-apply-wallpaperimage >/dev/null 2>&1 || exit 0
+i=0
+while [ "$i" -lt 15 ]; do
+  if plasma-apply-wallpaperimage "$IMG" >/dev/null 2>&1; then
+    mkdir -p "$(dirname "$FLAG")" && touch "$FLAG"
+    exit 0
+  fi
+  i=$((i + 1)); sleep 2
+done
+exit 0

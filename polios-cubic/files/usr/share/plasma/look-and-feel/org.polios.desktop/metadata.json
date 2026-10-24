@@ -1,0 +1,15 @@
+{
+    "KPlugin": {
+        "Authors": [{ "Name": "PoliOS", "Email": "polios@example.org" }],
+        "Category": "",
+        "Description": "PoliOS default desktop",
+        "Id": "org.polios.desktop",
+        "License": "GPL-3.0+",
+        "Name": "PoliOS",
+        "ServiceTypes": ["Plasma/LookAndFeel"],
+        "Version": "1.0",
+        "Website": "https://polinetwork.org"
+    },
+    "KPackageStructure": "Plasma/LookAndFeel",
+    "X-Plasma-MainScript": "defaults"
+}

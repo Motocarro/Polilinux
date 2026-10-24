@@ -1,0 +1,42 @@
+{
+  "policies": {
+    "DisplayBookmarksToolbar": "always",
+    "Bookmarks": [
+      {
+        "Title": "PoliNetwork",
+        "URL": "https://polinetwork.org",
+        "Placement": "toolbar"
+      },
+      {
+        "Title": "Aule Libere",
+        "URL": "https://aule.polinetwork.org",
+        "Folder": "Link Utili",
+        "Placement": "toolbar"
+      },
+      {
+        "Title": "Ricerca Gruppi",
+        "URL": "https://polinet.cc/groups",
+        "Folder": "Link Utili",
+        "Placement": "toolbar"
+      },
+      {
+        "Title": "Servizi Online PoliMi",
+        "URL": "https://www.polimi.it/servizi-online",
+        "Folder": "Link Utili",
+        "Placement": "toolbar"
+      },
+      {
+        "Title": "Connessione Wi-Fi",
+        "URL": "https://www.ict.polimi.it/wifi/",
+        "Folder": "Link Utili",
+        "Placement": "toolbar"
+      },
+      {
+        "Title": "WeBeep",
+        "URL": "https://webeep.polimi.it",
+        "Folder": "Link Utili",
+        "Placement": "toolbar"
+      }
+    ]
+  }
+}

@@ -1,0 +1,102 @@
+#!/usr/bin/python3 -I
+"""Root helper for PoliOS Welcome (run through pkexec by the wizard).
+
+  polios-welcome-helper [--dry-run] <course-id>...   install the courses' software
+  polios-welcome-helper --check [path/to/courses.conf]   validate the list (no root needed)
+
+The packages come ONLY from the root-owned courses.conf, never from arguments.
+--dry-run simulates apt (apt-get -s) and prints what flatpak would do.
+"""
+import os
+import shutil
+import subprocess
+import sys
+
+sys.dont_write_bytecode = True
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+import polios_common as common  # noqa: E402
+
+FLATHUB = "https://dl.flathub.org/repo/flathub.flatpakrepo"
+
+
+def run(cmd):
+    print("$ " + " ".join(cmd), flush=True)
+    env = dict(os.environ, DEBIAN_FRONTEND="noninteractive")
+    return subprocess.call(cmd, env=env)
+
+
+def check(path):
+    courses, problems = common.load_courses(path)
+    for problem in problems:
+        print("PROBLEM  " + problem)
+    missing = 0
+    for course in courses:
+        print("[%s] %s" % (course.id, course.title))
+        for pkg in course.apt:
+            version = common.apt_candidate(pkg)
+            missing += version is None
+            print("   %-8s apt      %s" % ("OK " + version if version else "MISSING", pkg))
+        for app in course.flatpak:
+            print("   %-8s flatpak  %s  (not checked)" % ("-", app))
+    print("\n%d course(s), %d problem(s), %d apt package(s) not found."
+          % (len(courses), len(problems), missing))
+    return 1 if (problems or missing) else 0
+
+
+def install(ids, dry):
+    if os.geteuid() == 0:
+        bad = common.untrusted_files()
+        if bad:
+            print("Refusing to run: these files must be owned by root and not writable by "
+                  "others (install with install.sh): " + ", ".join(bad))
+            return 3
+    courses, problems = common.load_courses()
+    by_id = {c.id: c for c in courses}
+    unknown = [i for i in ids if i not in by_id]
+    if unknown:
+        print("Unknown course(s): " + " ".join(unknown))
+        return 2
+    apt, flat = [], []
+    for cid in ids:
+        apt += [p for p in by_id[cid].apt if p not in apt]
+        flat += [f for f in by_id[cid].flatpak if f not in flat]
+    if not apt and not flat:
+        print("Nothing to install.")
+        return 0
+
+    if apt:
+        if not dry:
+            code = run(["apt-get", "update"])
+            if code:
+                return code
+        code = run(["apt-get", "-s" if dry else "-y", "install"] + apt)
+        if code:
+            return code
+    if flat:
+        if shutil.which("flatpak") is None:
+            code = run(["apt-get", "-s", "install", "flatpak"] if dry
+                       else ["apt-get", "-y", "install", "flatpak"])
+            if code:
+                return code
+        steps = [["flatpak", "remote-add", "--if-not-exists", "--system", "flathub", FLATHUB],
+                 ["flatpak", "install", "--system", "-y", "--noninteractive", "flathub"] + flat]
+        for step in steps:
+            if dry:
+                print("(dry run) $ " + " ".join(step), flush=True)
+            elif run(step):
+                return 1
+    print("Done.", flush=True)
+    return 0
+
+
+def main(argv):
+    args = argv[1:]
+    if "--check" in args:
+        rest = [a for a in args if not a.startswith("--")]
+        return check(rest[0] if rest else common.CONF)
+    ids = [a for a in args if not a.startswith("--")]
+    return install(ids, "--dry-run" in args)
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

@@ -14,7 +14,7 @@ echo "==> Installing files to $DEST (root-owned: the root helper refuses to run 
 rm -rf "$DEST"
 install -d -m 755 "$DEST" "$DEST/ca"
 install -m 755 "$SRC/polios-welcome" "$SRC/polios-welcome-helper" "$DEST/"
-install -m 644 "$SRC/polios_common.py" "$SRC/courses.conf" "$DEST/"
+install -m 644 "$SRC/polios_common.py" "$SRC/courses.conf" "$SRC/polios.conf" "$DEST/"
 for pem in "$SRC"/ca/*.pem; do
   [ -e "$pem" ] && install -m 644 "$pem" "$DEST/ca/"
 done

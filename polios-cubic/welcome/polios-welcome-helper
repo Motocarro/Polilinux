@@ -2,27 +2,68 @@
 """Root helper for PoliOS Welcome (run through pkexec by the wizard).
 
   polios-welcome-helper [--dry-run] <course-id>...   install the courses' software
-  polios-welcome-helper --check [path/to/courses.conf]   validate the list (no root needed)
+  polios-welcome-helper --list                       print the current course list as JSON
+  polios-welcome-helper --check [path/to/courses.conf]   validate a list (no root needed)
 
-The packages come ONLY from the root-owned courses.conf, never from arguments.
---dry-run simulates apt (apt-get -s) and prints what flatpak would do.
+What gets installed comes ONLY from the course list (the online one if polios.conf sets
+a GitHub URL, else the root-owned courses.conf): never from arguments. A list can only name
+apt packages, Flathub apps, or a recipe from KNOWN_EXTRAS: it cannot bring URLs or commands.
+--dry-run simulates apt (apt-get -s) and prints what flatpak/extras would do.
 """
+import json
 import os
 import shutil
 import subprocess
 import sys
+import tempfile
+import urllib.request
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 import polios_common as common  # noqa: E402
 
 FLATHUB = "https://dl.flathub.org/repo/flathub.flatpakrepo"
+CHROME_DEB = "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb"
+MAX_DEB_BYTES = 400 * 1024 * 1024
 
 
 def run(cmd):
     print("$ " + " ".join(cmd), flush=True)
     env = dict(os.environ, DEBIAN_FRONTEND="noninteractive")
     return subprocess.call(cmd, env=env)
+
+
+def recipe_google_chrome(dry):
+    """Google's own .deb (its postinst adds Google's apt repository, so Chrome then updates itself)."""
+    arch = subprocess.run(["dpkg", "--print-architecture"], capture_output=True,
+                          text=True).stdout.strip()
+    if arch != "amd64":
+        print("Google Chrome is only available for amd64 (this system: %s)." % arch)
+        return 1
+    if dry:
+        print("(dry run) would download %s and install it with apt" % CHROME_DEB, flush=True)
+        return 0
+    with tempfile.TemporaryDirectory() as tmp:
+        os.chmod(tmp, 0o755)
+        path = os.path.join(tmp, "google-chrome-stable.deb")
+        print("Downloading Google Chrome...", flush=True)
+        total = 0
+        with urllib.request.urlopen(CHROME_DEB, timeout=30) as src, open(path, "wb") as dst:
+            while True:
+                chunk = src.read(1 << 20)
+                if not chunk:
+                    break
+                total += len(chunk)
+                if total > MAX_DEB_BYTES:
+                    print("The download is unexpectedly large: aborting.")
+                    return 1
+                dst.write(chunk)
+        os.chmod(path, 0o644)
+        return run(["apt-get", "-y", "install", path])
+
+
+RECIPES = {"google-chrome": recipe_google_chrome}
+assert set(RECIPES) == set(common.KNOWN_EXTRAS)
 
 
 def check(path):
@@ -38,9 +79,18 @@ def check(path):
             print("   %-8s apt      %s" % ("OK " + version if version else "MISSING", pkg))
         for app in course.flatpak:
             print("   %-8s flatpak  %s  (not checked)" % ("-", app))
+        for extra in course.extra:
+            print("   %-8s extra    %s" % ("OK", extra))
     print("\n%d course(s), %d problem(s), %d apt package(s) not found."
           % (len(courses), len(problems), missing))
     return 1 if (problems or missing) else 0
+
+
+def list_courses():
+    courses, problems, source = common.load_best()
+    print(json.dumps({"source": source, "problems": problems,
+                      "courses": [common.course_to_dict(c) for c in courses]}))
+    return 0
 
 
 def install(ids, dry):
@@ -50,17 +100,19 @@ def install(ids, dry):
             print("Refusing to run: these files must be owned by root and not writable by "
                   "others (install with install.sh): " + ", ".join(bad))
             return 3
-    courses, problems = common.load_courses()
+    courses, _problems, source = common.load_best()
+    print("Course list: %s" % ("online" if source == "remote" else "built into the system"), flush=True)
     by_id = {c.id: c for c in courses}
     unknown = [i for i in ids if i not in by_id]
     if unknown:
         print("Unknown course(s): " + " ".join(unknown))
         return 2
-    apt, flat = [], []
+    apt, flat, extras = [], [], []
     for cid in ids:
         apt += [p for p in by_id[cid].apt if p not in apt]
         flat += [f for f in by_id[cid].flatpak if f not in flat]
-    if not apt and not flat:
+        extras += [e for e in by_id[cid].extra if e not in extras]
+    if not (apt or flat or extras):
         print("Nothing to install.")
         return 0
 
@@ -70,6 +122,10 @@ def install(ids, dry):
             if code:
                 return code
         code = run(["apt-get", "-s" if dry else "-y", "install"] + apt)
+        if code:
+            return code
+    for extra in extras:
+        code = RECIPES[extra](dry)
         if code:
             return code
     if flat:
@@ -91,6 +147,8 @@ def install(ids, dry):
 
 def main(argv):
     args = argv[1:]
+    if "--list" in args:
+        return list_courses()
     if "--check" in args:
         rest = [a for a in args if not a.startswith("--")]
         return check(rest[0] if rest else common.CONF)

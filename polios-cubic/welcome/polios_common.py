@@ -5,17 +5,27 @@ import os
 import re
 import stat
 import subprocess
+import urllib.error
+import urllib.parse
+import urllib.request
 
 INSTALL_DIR = os.path.dirname(os.path.realpath(__file__))
-CONF = os.path.join(INSTALL_DIR, "courses.conf")
+CONF = os.path.join(INSTALL_DIR, "courses.conf")          # list built into the system
+SETTINGS = os.path.join(INSTALL_DIR, "polios.conf")       # root-owned: where the online list lives
 
 REALM = "@polimi.it"
 ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 APT_RE = re.compile(r"^[a-z0-9][a-z0-9+.-]+$")
 FLATPAK_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*(\.[A-Za-z0-9_-]+)+$")  # reverse-DNS app id
+# Third-party software with a recipe written in the root helper. A course list can only
+# NAME one of these; it can never bring its own URL or command.
+KNOWN_EXTRAS = ("google-chrome",)
+
+REMOTE_HOST = "raw.githubusercontent.com"
+MAX_REMOTE_BYTES = 256 * 1024
 
 Course = collections.namedtuple(
-    "Course", "id title description title_en description_en apt flatpak")
+    "Course", "id title description title_en description_en apt flatpak extra")
 
 
 def localized(course, lang):
@@ -39,35 +49,110 @@ def normalize_username(text):
     return text
 
 
-def load_courses(path=CONF):
-    """Read courses.conf. Returns (courses, problems); a bad section is reported
+# ------------------------------------------------------------ course lists ---
+
+def parse_courses_text(text):
+    """Parse courses.conf text. Returns (courses, problems); a bad section is reported
     in `problems` and skipped, it never crashes the wizard."""
     parser = configparser.ConfigParser(interpolation=None)
     try:
-        parser.read(path, encoding="utf-8")
-    except (configparser.Error, OSError, UnicodeDecodeError) as exc:
-        return [], ["cannot read %s: %s" % (path, exc)]
+        parser.read_string(text)
+    except configparser.Error as exc:
+        return [], ["cannot parse the course list: %s" % str(exc).splitlines()[0]]
     courses, problems = [], []
     for cid in parser.sections():
         sec = parser[cid]
         if sec.get("enabled", "yes").strip().lower() in ("no", "false", "0"):
             continue
         apt, flat = sec.get("apt", "").split(), sec.get("flatpak", "").split()
+        extra = sec.get("extra", "").split()
         bad = [p for p in apt if not APT_RE.match(p)] + \
-              [f for f in flat if not FLATPAK_RE.match(f)]
+              [f for f in flat if not FLATPAK_RE.match(f)] + \
+              [e for e in extra if e not in KNOWN_EXTRAS]
         if not ID_RE.match(cid):
             problems.append("[%s]: course id must be lowercase letters, digits and -" % cid)
         elif bad:
-            problems.append("[%s]: invalid package name(s): %s" % (cid, " ".join(bad)))
-        elif not apt and not flat:
-            problems.append("[%s]: no apt or flatpak packages listed" % cid)
+            problems.append("[%s]: invalid or unknown package name(s): %s" % (cid, " ".join(bad)))
+        elif not (apt or flat or extra):
+            problems.append("[%s]: nothing to install (no apt, flatpak or extra)" % cid)
         else:
             courses.append(Course(
                 cid, sec.get("title", "").strip() or cid, sec.get("description", "").strip(),
                 sec.get("title_en", "").strip(), sec.get("description_en", "").strip(),
-                apt, flat))
+                apt, flat, extra))
     return courses, problems
 
+
+def load_courses(path=CONF):
+    """The list built into the system (a file)."""
+    try:
+        with open(path, encoding="utf-8") as handle:
+            text = handle.read()
+    except (OSError, UnicodeDecodeError) as exc:
+        return [], ["cannot read %s: %s" % (path, exc)]
+    return parse_courses_text(text)
+
+
+def valid_remote_url(url):
+    parts = urllib.parse.urlsplit(url)
+    return (parts.scheme == "https" and parts.netloc == REMOTE_HOST
+            and len(parts.path) > 1 and not parts.fragment)
+
+
+def remote_url(path=SETTINGS):
+    """The online list URL from the root-owned polios.conf, or '' if unset or not allowed."""
+    parser = configparser.ConfigParser(interpolation=None)
+    try:
+        parser.read(path, encoding="utf-8")
+        url = parser.get("remote", "courses_url", fallback="").strip()
+    except (configparser.Error, OSError, UnicodeDecodeError):
+        return ""
+    return url if valid_remote_url(url) else ""
+
+
+class _SameRulesRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        if not valid_remote_url(newurl):
+            raise urllib.error.URLError("redirect to a disallowed address: %s" % newurl)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+def fetch_text(url, timeout=6):
+    """Download a small text file (size-capped). Raises on any problem."""
+    opener = urllib.request.build_opener(_SameRulesRedirect)
+    req = urllib.request.Request(url, headers={"User-Agent": "polios-welcome"})
+    with opener.open(req, timeout=timeout) as resp:
+        data = resp.read(MAX_REMOTE_BYTES + 1)
+    if len(data) > MAX_REMOTE_BYTES:
+        raise ValueError("the course list is too large")
+    return data.decode("utf-8")
+
+
+def load_best():
+    """(courses, problems, source). The online list when configured and usable,
+    otherwise the list built into the system. Never raises."""
+    url = remote_url()
+    if url:
+        try:
+            courses, problems = parse_courses_text(fetch_text(url))
+            if courses:
+                return courses, problems, "remote"
+        except Exception:  # offline, timeout, HTTP error, bad encoding...: fall back
+            pass
+    courses, problems = load_courses(CONF)
+    return courses, problems, "local"
+
+
+def course_to_dict(course):
+    return dict(course._asdict())
+
+
+def course_from_dict(data):
+    return Course(**{k: (list(data[k]) if k in ("apt", "flatpak", "extra") else str(data[k]))
+                     for k in Course._fields})
+
+
+# --------------------------------------------------------------- utilities ---
 
 def apt_candidate(pkg):
     """Version apt would install, or None if the package doesn't exist."""
@@ -88,7 +173,7 @@ def untrusted_files():
     """Files the root helper depends on that are not root-owned or are writable by others."""
     bad = []
     for path in (INSTALL_DIR, os.path.join(INSTALL_DIR, "polios_common.py"),
-                 os.path.join(INSTALL_DIR, "polios-welcome-helper"), CONF):
+                 os.path.join(INSTALL_DIR, "polios-welcome-helper"), CONF, SETTINGS):
         try:
             st = os.stat(path)
         except OSError:

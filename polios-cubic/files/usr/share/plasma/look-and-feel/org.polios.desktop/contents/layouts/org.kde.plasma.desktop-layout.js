@@ -16,7 +16,8 @@ tasks.currentConfigGroup = ["General"]
 tasks.writeConfig("launchers", [
     "applications:mintinstall.desktop",
     "applications:org.kde.dolphin.desktop",
-    "applications:org.gnome.Terminal.desktop",
+    "applications:org.kde.konsole.desktop",
+    "applications:firefox.desktop",
     "applications:google-chrome.desktop",
     "applications:webeep-sync.desktop"
 ].join(","))

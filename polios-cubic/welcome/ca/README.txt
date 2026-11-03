@@ -1,3 +1,3 @@
-Put cachain_geant_harica.pem here (run ../fetch-ca.sh, or download the zip from the
-Polimi ICT guide "TTLS - Linux" and extract it). Without it the Wi-Fi page is disabled.
-Confirm with Polinetwork that it can be bundled in the ISO.
+cachain_geant_harica.pem: the Polimi Wi-Fi certificate chain (GEANT TLS RSA 1 + HARICA root),
+included with the permission of Polinetwork. Source: https://www.ict.polimi.it/wifi/connessione-permanente/ttls-linux/
+Without it the Wi-Fi page of the wizard is disabled.

@@ -56,6 +56,16 @@ class Courses(unittest.TestCase):
         courses, _ = self.load("[a]\napt = gcc\nenabled = no\n")
         self.assertEqual(courses, [])
 
+    def test_extra_known_and_unknown(self):
+        courses, problems = self.load("[a]\nextra = google-chrome\n[b]\nextra = evil-script\n")
+        self.assertEqual([c.id for c in courses], ["a"])
+        self.assertEqual(courses[0].extra, ["google-chrome"])
+        self.assertEqual(len(problems), 1)
+
+    def test_duplicate_section_does_not_crash(self):
+        courses, problems = common.parse_courses_text("[a]\napt = gcc\n[a]\napt = gdb\n")
+        self.assertEqual((courses, len(problems)), ([], 1))
+
     def test_missing_file(self):
         self.assertEqual(common.load_courses("/nonexistent")[0], [])
 
@@ -77,3 +87,57 @@ class Localized(unittest.TestCase):
         self.assertEqual(common.localized(a, "en"), ("Ciao", "Desc"))
         self.assertEqual(common.localized(b, "en"), ("Hello", "Hi"))
         self.assertEqual(common.localized(b, "it"), ("Ciao", ""))
+
+
+class Remote(unittest.TestCase):
+    def test_url_rules(self):
+        ok = "https://raw.githubusercontent.com/ORG/REPO/main/courses.conf"
+        self.assertTrue(common.valid_remote_url(ok))
+        for bad in ("http://raw.githubusercontent.com/ORG/REPO/main/courses.conf",
+                    "https://evil.example/ORG/REPO/main/courses.conf",
+                    "https://raw.githubusercontent.com.evil.example/x/y",
+                    "https://user@raw.githubusercontent.com/x/y",
+                    "https://raw.githubusercontent.com/", "file:///etc/passwd", ""):
+            self.assertFalse(common.valid_remote_url(bad), bad)
+
+    def test_settings_file(self):
+        good = conf("[remote]\ncourses_url = https://raw.githubusercontent.com/O/R/main/c.conf\n")
+        bad = conf("[remote]\ncourses_url = http://example.com/c.conf\n")
+        try:
+            self.assertEqual(common.remote_url(good), "https://raw.githubusercontent.com/O/R/main/c.conf")
+            self.assertEqual(common.remote_url(bad), "")
+            self.assertEqual(common.remote_url("/nonexistent"), "")
+        finally:
+            os.unlink(good); os.unlink(bad)
+
+    def test_fetch_and_fallback(self):
+        import http.server, threading
+        body = b"[remote-course]\ntitle = Online\napt = gcc\n"
+        class H(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):
+                data = b"x" * (common.MAX_REMOTE_BYTES + 10) if self.path == "/big" else body
+                self.send_response(200); self.end_headers(); self.wfile.write(data)
+            def log_message(self, *a):
+                pass
+        srv = http.server.HTTPServer(("127.0.0.1", 0), H)
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        base = "http://127.0.0.1:%d" % srv.server_port
+        try:
+            self.assertEqual(common.fetch_text(base + "/ok"), body.decode())
+            with self.assertRaises(ValueError):
+                common.fetch_text(base + "/big")
+            saved = common.remote_url, common.fetch_text
+            try:
+                common.remote_url = lambda *a: base + "/ok"
+                courses, _, source = common.load_best()
+                self.assertEqual((source, courses[0].id), ("remote", "remote-course"))
+                common.remote_url = lambda *a: "http://127.0.0.1:9/none"      # unreachable
+                self.assertEqual(common.load_best()[2], "local")
+            finally:
+                common.remote_url, common.fetch_text = saved
+        finally:
+            srv.shutdown()
+
+    def test_dict_roundtrip(self):
+        c = common.parse_courses_text("[a]\ntitle = T\napt = gcc gdb\nextra = google-chrome\n")[0][0]
+        self.assertEqual(common.course_from_dict(common.course_to_dict(c)), c)

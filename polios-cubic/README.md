@@ -10,8 +10,8 @@ wizard (`welcome/`). One copy, one command.
 
 **Before Cubic**
 1. Unzip `polios-cubic.zip` on your computer.
-2. Put the Polimi certificate in `welcome/ca/cachain_geant_harica.pem` (the Wi-Fi page is disabled without it;
-   `welcome/fetch-ca.sh` tries to download it). Skip this and everything else still works.
+2. (Optional) the online course list: edit `welcome/polios.conf` (see `welcome/README.md`). The Polimi
+   certificate is already included.
 
 **In Cubic**
 3. Start a NEW project from the original `linuxmint-22.3-cinnamon-64bit.iso` (recommended: clean and
@@ -25,19 +25,21 @@ wizard (`welcome/`). One copy, one command.
    ```
    It takes a while (downloads KDE, icons, language packs) and needs internet in the chroot. It stops at the first
    error with a message. Log: `/var/log/polios-cubic.log`.
-6. Check:
+6. Check (a terminal here means Konsole; GNOME Terminal is removed on purpose):
    ```
-   dpkg -l | grep -E 'konsole|gnome-terminal|kwin-x11|systemsettings|plasma-nm'
+   dpkg -l | grep -E 'konsole|kwin-x11|systemsettings|plasma-nm|webeep'
    readlink -f /usr/share/plymouth/themes/default.plymouth   # ends in polios.plymouth
    ls /opt/polios-welcome /usr/share/polios-assets
    ```
-7. Next pages: on "packages to remove" do NOT tick konsole, gnome-terminal, plasma-*, kwin-*. If Cubic offers
+7. Next pages: on "packages to remove" do NOT tick konsole, webeep-sync, plasma-*, kwin-*. If Cubic offers
    to update the kernel/initrd, accept (the boot splash lives in the initrd). Generate the ISO.
 
 **After the ISO: test in a VM**
-- Live session: PoliOS wallpaper, panel with start button, terminal available, boot splash on boot.
-- Install it, log in: the wizard opens once (Italian by default, English button bottom left);
-  `neofetch` shows the PoliOS logo.
+- Live session: PoliOS wallpaper, panel with start button, Konsole, WeBeep Sync, boot splash on boot.
+- Install it: the login screen has the PoliOS wallpaper; after login only the PoliOS wizard opens
+  (no "Welcome to Linux Mint"), Italian by default, English button bottom left; `neofetch` shows the logo.
+- In the wizard, "Google Chrome" is a course entry: ticking it downloads Chrome from Google and the
+  panel launcher appears.
 
 ## What it sets up
 
@@ -57,14 +59,28 @@ default apps, Chrome/Firefox bookmarks, neofetch/fastfetch logo, PoliOS boot spl
   that file. The USB boot menu of the live ISO is separate (Cubic's boot page) and not changed.
   `splash.jpg` is not used for GRUB: its white area would make the menu text unreadable.
 
+## Changes in this round
+
+- **WeBeep Sync** is installed in the ISO (its GPL-3.0 `.deb` from GitHub; the build warns and goes on if the
+  download fails). **Google Chrome** is NOT baked in: it is a wizard entry that downloads it from Google on the
+  student's computer (Google's terms limit redistributing Chrome in an ISO). Firefox is pinned in the panel, so
+  there is a browser from the first minute.
+- **GNOME Terminal** is no longer installed; if Mint's packages depend on it, it is hidden instead (the build
+  prints a warning). Konsole is the terminal.
+- **Login screen**: `/etc/lightdm/slick-greeter.conf` with the PoliOS background and logo (the Mint file, if
+  packaged, is diverted so upgrades cannot restore it).
+- **"Welcome to Linux Mint"** is purged, or hidden through every autostart entry that starts it. The other
+  Mint autostart entries are listed in the build output.
+- **Online course list** and the Chrome recipe in the wizard (see `welcome/README.md`).
+
 ## What changed compared to the original commands
 
 - **Panel and wallpaper**: the hand-written `plasma-org.kde.plasma.desktop-appletsrc` is gone. Plasma
   ignores or breaks such files (the desktop needs a real activity id; no clock/tray were listed).
   The default layout now comes from a look-and-feel package (`org.polios.desktop`), the mechanism
   Plasma's own Breeze uses. A one-time autostart (`polios-first-login`) re-applies the wallpaper as a fallback.
-- **Terminals**: `konsole` and `gnome-terminal` are installed explicitly, marked manual, verified at the
-  end of step 4 (the script stops if one is missing), and a terminal is pinned in the panel.
+- **Terminals**: `konsole` is installed explicitly, marked manual and verified at the end of the KDE step (the
+  script stops if it is missing), and pinned in the panel. GNOME Terminal was dropped (see "Changes in this round").
 - **`--no-install-recommends` side effect**: `kwin-x11`, `systemsettings`, `plasma-nm`, `plasma-pa`,
   `powerdevil`, `bluedevil`, `kscreen` and the portals are only *recommended* by Plasma, so they were being
   skipped. They are now listed explicitly.
@@ -80,9 +96,9 @@ default apps, Chrome/Firefox bookmarks, neofetch/fastfetch logo, PoliOS boot spl
 
 ## Still open
 
-- The panel pins `google-chrome`, `webeep-sync` and `mintinstall`, but nothing installs Chrome or WeBeep Sync;
-  Plasma hides launchers whose app is missing.
-- The login screen is still Mint's LightDM (Mint logo).
+- The panel still pins `mintinstall` (Mint's software manager, GTK, Mint-branded); Plasma hides launchers of apps
+  that are not installed. Other Mint apps (update manager tray, etc.) are still present.
+- The login screen is Mint's LightDM greeter with PoliOS wallpaper (we did not replace LightDM with SDDM).
 - fastfetch is not in Ubuntu 24.04's repositories: check `apt-cache policy fastfetch` on Mint; the config is ready.
 - Untested here: a real Cubic run, Plasma applying the layout, and the Plymouth splash on screen (its files and
   theme structure were validated, not rendered). Test the splash first in a VM; `Esc` shows boot text if it misbehaves.

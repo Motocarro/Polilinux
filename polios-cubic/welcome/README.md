@@ -1,94 +1,69 @@
-# PoliOS Welcome (standalone)
+# PoliOS Welcome
 
-First-run wizard: (1) Polimi Wi-Fi credentials, (2) pick your courses, (3) install their
-software. No packaging or repo needed: copy this folder anywhere and run `install.sh`.
+First-run wizard: (1) Polimi Wi-Fi credentials, (2) pick your courses, (3) install their software.
+Italian by default, English with one click. Part of `polios-cubic` (the script installs it), but it also
+works on its own: `sudo ./install.sh`.
 
 ```
-courses.conf            <- THE file to edit: courses and their apt / flatpak packages
+courses.conf            the course list built into the system  <- the file to edit
+polios.conf             where the ONLINE course list lives (GitHub URL, empty = off)
 polios-welcome          the wizard (PyQt5)
-polios-welcome-helper   small root helper (via pkexec): installs, or --check validates
+polios-welcome-helper   small root helper (via pkexec): installs, lists, or --check validates
 polios_common.py        shared code
-install.sh / uninstall.sh / fetch-ca.sh
-ca/                     put cachain_geant_harica.pem here
-tests/                  python3 -m unittest discover tests
+ca/                     the Polimi certificate chain (included)
+install.sh / uninstall.sh      tests/   (python3 -m unittest discover tests)
 ```
 
-## 1. Test on the Mint VM
+## Test on a VM
 
 ```bash
-cd polios-welcome
-./fetch-ca.sh            # optional, see "CA" below
 sudo ./install.sh
-polios-welcome --dry-run # real run: polios-welcome
+polios-welcome --dry-run      # nothing is installed; apt dependencies are really resolved
 ```
+`--force-wifi` shows the Wi-Fi page without a Wi-Fi adapter; `--lang=en` starts in English.
+First-login behaviour: `rm ~/.config/polios/welcome-done`, log out and in. Start over: `sudo ./uninstall.sh`.
 
-- `--dry-run` simulates the software installation (apt `-s`): nothing is installed, but
-  package names and dependencies are really resolved. Wi-Fi profiles ARE really created
-  (delete with `nmcli connection delete polimi-protected`).
-- No Wi-Fi adapter (VM)? The Wi-Fi page is skipped. Use `polios-welcome --force-wifi` to see it.
-- Test the first-login behavior: `rm ~/.config/polios/welcome-done`, log out and in.
-  (Autostart runs `--first-run`: once per user, never in the live session.)
-- Start over: `sudo ./uninstall.sh`, or restore a VM snapshot.
-
-## 2. Where the apps go: `courses.conf`
+## Course list: built-in and online
 
 ```ini
 [aerospace]
-title = Aerospace Engineering
-description = Simulation and CAD
+title = Ingegneria Aerospaziale
+title_en = Aerospace Engineering
+description = Simulazione e CAD
 apt = octave freecad
 flatpak = org.kicad.KiCad
+extra = google-chrome        # optional; only recipes known to the helper
 ```
+- **Built in**: `courses.conf` (installed to `/opt/polios-welcome/`). Always works, also offline.
+- **Online**: put the same kind of file in the PoliOS GitHub repo and set, in `polios.conf`:
+  `courses_url = https://raw.githubusercontent.com/ORG/REPO/BRANCH/courses.conf`
+  The wizard shows the built-in list immediately, then replaces it with the online one when it arrives
+  (offline or on any error it silently keeps the built-in list). New course = edit the file on GitHub,
+  no new ISO and no new `polios-welcome`.
+- Check names before publishing a list: `polios-welcome-helper --check path/to/courses.conf`.
 
-- `apt` = apt package names, `flatpak` = Flathub app IDs (installed system-wide).
-- Check names before shipping, no root needed: `polios-welcome-helper --check`
-  (reports any apt package that does not exist on this system).
-- Edit the copy in this folder and re-run `sudo ./install.sh`, or edit
-  `/opt/polios-welcome/courses.conf` directly while testing.
-- The root helper only installs what is listed in the root-owned `courses.conf`.
+### Who can install what (security)
 
-## Language (Italian default, English switch)
+Whoever can edit the online file decides what gets installed on students' computers (as root, after the
+student's password). So:
+- **Protect that branch** on GitHub: pull requests + required review, no direct pushes.
+- The list can only name **apt packages, Flathub apps, or built-in recipes** (`extra`: only `google-chrome`
+  for now). It cannot carry URLs, scripts or new apt sources: those checks are in the root helper.
+- The URL is fixed in the root-owned `polios.conf`, must be `https://raw.githubusercontent.com/...`, redirects
+  elsewhere are refused, size is capped (256 KB), and the root helper fetches the list itself (it never trusts
+  a copy made by the user-level wizard).
+- Students can hover a course to see exactly which packages it installs.
 
-- The wizard starts in **Italian**. The **English / Italiano** button (bottom left, on every
-  page) switches instantly; the choice is remembered in `~/.config/polios/lang`.
-- Force a language for testing: `polios-welcome --lang=en`.
-- Texts live in the `STRINGS` table in `polios-welcome` (one block per language, same keys).
-  Another language = copy a block. `python3 -m unittest discover tests` checks that both
-  languages have the same keys and placeholders.
-- Course names: `title` / `description` are Italian (the default); add `title_en` /
-  `description_en` in `courses.conf` for English (falls back to the Italian text).
-- This translates the wizard only, not the apt/Flatpak log lines or the operating system.
+## Wi-Fi
 
-## Automatic start
-
-`install.sh` installs `/etc/xdg/autostart/polios-welcome.desktop`, which runs
-`polios-welcome --first-run` at the first graphical login of every user: it shows once
-(a flag in `~/.config/polios/welcome-done`), never in the live session. Cancelling counts
-as done; the menu entry "PoliOS Welcome" reopens it.
-
-## 3. Into Cubic
-
-In the chroot terminal: copy this folder in, `./install.sh`, and check
-`ls /etc/xdg/autostart/polios-welcome.desktop /opt/polios-welcome`.
-(The wizard does not start in the live session and starts at the first login of the
-installed system.) Put `ca/cachain_geant_harica.pem` in before installing.
-
-## CA (Wi-Fi certificate)
-
-Without `ca/cachain_geant_harica.pem` the Wi-Fi page disables itself. `fetch-ca.sh`
-downloads it from the Polimi ICT page (untested against the live site; otherwise download
-the zip from the guide and extract it into `ca/`). Confirm with Polinetwork that it can
-be bundled in the ISO.
-
-## Wi-Fi settings used (from the Polimi ICT guide, "TTLS - Linux")
-
-`polimi-protected`, WPA/WPA2 Enterprise, TTLS, anonymous identity `anonymous@polimi.it`,
-domain `wifi.polimi.it`, CA `cachain_geant_harica.pem`, inner auth PAP, username
-`<codice persona>@polimi.it` (added automatically). The optional wired profile uses the same
-values; it can fail at home, so it is off by default.
+`polimi-protected`, WPA/WPA2 Enterprise, TTLS, anonymous identity `anonymous@polimi.it`, domain
+`wifi.polimi.it`, certificate `ca/cachain_geant_harica.pem` (included with Polinetwork's permission),
+inner authentication PAP, username `<codice persona>@polimi.it` (added automatically). The profile is
+created over D-Bus (the password never appears on a command line); re-running the wizard replaces it, which
+is how to update an expired password. The optional wired 802.1X profile is off by default.
 
 ## Known limits
 
-- Tested: config parsing, helper (dry run, refusals, flatpak path), wizard flow in an offscreen
-  window (both languages, switching mid-wizard). NOT tested: the real NetworkManager profile, a real (non-dry) install, `fetch-ca.sh`.
-- Qt5 on purpose (follows the Plasma 5.27 theme). Mint 27 / Plasma 6 may need a PyQt6 port.
+Tested: list parsing, online fetch (real HTTPS and local server), helper (dry run, refusals), wizard flow
+and async list update in an offscreen window, both languages. NOT tested: the real NetworkManager profile,
+a real (non-dry) install, the real Chrome download. Qt5 on purpose (Plasma 5.27); Mint 27 may need PyQt6.

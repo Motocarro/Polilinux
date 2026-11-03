@@ -8,6 +8,7 @@
   polios-welcome --dry-run     simulate the software installation (nothing is installed)
   polios-welcome --lang=en     start in English (default: Italian, or the last choice)
 """
+import json
 import os
 import subprocess
 import sys
@@ -163,6 +164,9 @@ STRINGS = {
         "courses_offline": "Nessuna connessione a Internet. Il software viene scaricato "
                            "da Internet: collegati prima, oppure riapri PoliOS Welcome "
                            "più tardi dal menu.",
+        "courses_loading": "Aggiornamento dell'elenco dei corsi...",
+        "courses_src_remote": "Elenco dei corsi aggiornato online.",
+        "courses_src_local": "Elenco dei corsi integrato nel sistema (nessun aggiornamento online).",
         "install_title": "Installazione",
         "install_nothing": "Nessun corso selezionato. Niente da installare.",
         "installing": "Installazione in corso, può richiedere qualche minuto. "
@@ -211,6 +215,9 @@ STRINGS = {
         "courses_offline": "No internet connection detected. The software is downloaded "
                            "from the internet: connect first, or run PoliOS Welcome "
                            "again later from the menu.",
+        "courses_loading": "Updating the course list...",
+        "courses_src_remote": "Course list updated online.",
+        "courses_src_local": "Course list built into the system (no online update).",
         "install_title": "Installing",
         "install_nothing": "No course selected. Nothing to install.",
         "installing": "Installing, this can take a few minutes. You may be asked for "
@@ -358,34 +365,78 @@ class CoursesPage(Page):
         self.setCommitPage(True)
         self.info = QtWidgets.QLabel()
         self.info.setWordWrap(True)
+        self.source = QtWidgets.QLabel()
+        self.source.setStyleSheet("color: gray;")
         self.list = QtWidgets.QListWidget()
-        self.courses, problems = common.load_courses()
-        for course in self.courses:
-            item = QtWidgets.QListWidgetItem()
-            item.setFlags(item.flags() | QtCore.Qt.ItemIsUserCheckable)
-            item.setCheckState(QtCore.Qt.Unchecked)
-            item.setData(QtCore.Qt.UserRole, course.id)
-            self.list.addItem(item)
+        self.courses = []
+        self.proc = None
         layout = QtWidgets.QVBoxLayout(self)
         layout.addWidget(self.info)
         layout.addWidget(self.list)
+        layout.addWidget(self.source)
+        courses, problems = common.load_courses()      # built-in list, shown immediately
+        self._populate(courses)
         if problems:
             self.show_text(self.info, "courses_problem", problems="; ".join(problems))
-        elif not self.courses:
+        elif not courses:
             self.show_text(self.info, "courses_none")
         self.retranslate()
+
+    def _populate(self, courses):
+        """(Re)build the list; keep what the student has already ticked."""
+        ticked = set(self.selected())
+        self.courses = list(courses)
+        self.list.clear()
+        for course in self.courses:
+            item = QtWidgets.QListWidgetItem()
+            item.setFlags(item.flags() | QtCore.Qt.ItemIsUserCheckable)
+            item.setCheckState(QtCore.Qt.Checked if course.id in ticked else QtCore.Qt.Unchecked)
+            item.setData(QtCore.Qt.UserRole, course.id)
+            names = course.apt + course.flatpak + course.extra
+            item.setToolTip(", ".join(names))      # students can see exactly what will be installed
+            self.list.addItem(item)
+        self._retext_items()
+
+    def _retext_items(self):
+        for i, course in enumerate(self.courses):
+            title, desc = common.localized(course, LANG)
+            self.list.item(i).setText(title + (" \u2013 " + desc if desc else ""))
 
     def retranslate(self):
         super().retranslate()
         self.setTitle(tr("courses_title"))
         self.setSubTitle(tr("courses_subtitle"))
-        for i, course in enumerate(self.courses):
-            title, desc = common.localized(course, LANG)
-            self.list.item(i).setText(title + (" \u2013 " + desc if desc else ""))
+        self._retext_items()
 
     def initializePage(self):
         if self.list.count() and not has_internet():
             self.show_text(self.info, "courses_offline")
+        if common.remote_url() and self.proc is None:
+            self.show_text(self.source, "courses_loading")
+            self.proc = QtCore.QProcess(self)
+            self.proc.finished.connect(self._list_done)
+            self.proc.start(HELPER, ["--list"])
+            QtCore.QTimer.singleShot(15000, self._list_timeout)
+
+    def _list_timeout(self):
+        if self.proc is not None and self.proc.state() != QtCore.QProcess.NotRunning:
+            self.proc.kill()
+
+    def _list_done(self, _code, _status):
+        data = bytes(self.proc.readAllStandardOutput()).decode("utf-8", "replace")
+        self.proc = None
+        try:
+            payload = json.loads(data)
+            courses = [common.course_from_dict(d) for d in payload["courses"]]
+            source = payload["source"]
+        except (ValueError, KeyError, TypeError):
+            self.show_text(self.source, "courses_src_local")
+            return
+        if courses:
+            self._populate(courses)
+            if self._dynamic.get(self.info, (None,))[0] in ("courses_problem", "courses_none"):
+                self.clear_text(self.info)
+        self.show_text(self.source, "courses_src_remote" if source == "remote" else "courses_src_local")
 
     def selected(self):
         return [self.list.item(i).data(QtCore.Qt.UserRole)

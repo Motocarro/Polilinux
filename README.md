@@ -1,5 +1,7 @@
 # Polilinux
 
+> NOTE: This version is now deprecated. The new Linux Distro is now [PoliOS](https://github.com/PoliNetworkOrg/PoliOS); please check it out!
+
 
 **An (un)official Ubuntu-based Linux distribution for Politecnico di Milano students.**
 
